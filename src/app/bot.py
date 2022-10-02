@@ -11,7 +11,8 @@ class LeagueCallBot(commands.Bot):
         await registry_games_channel.purge()
         print(f'Purging channel {registry_games_channel.name}...')
 
-        button = discord.ui.Button(label="⚔️ Estou em partida!", style=discord.ButtonStyle.danger)
+        button = discord.ui.Button(label="Estou em partida!", style=discord.ButtonStyle.danger)
+        button.emoji = "⚔️"
         button.callback = self.registry_game_callback
 
         view = discord.ui.View(timeout=2000)
