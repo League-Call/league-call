@@ -47,20 +47,55 @@ class LeagueCallBot(commands.Bot):
             await interaction.response.send_message("Ocorreu um erro ao registrar sua partida!", ephemeral=True)
             return
 
-        await self._create_channels(game, interaction)
+        if (game.get('gameType') != 'MATCHED_GAME'):
+            await interaction.response.send_message("Infelizmente não encontramos a sua partida!", ephemeral=True)
+            return
 
-        await interaction.response.send_message("Partida registrada com sucesso!", ephemeral=True)
+        channels = await self._create_channels(game, interaction)
+        embed = discord.Embed(title="Registro de partida",
+                            description="Partida registrada com sucesso!",
+                            color=discord.Color.green())
 
-    async def _create_channels(self, game, interaction: discord.Interaction):
-        category = discord.utils.get(interaction.guild.categories, name=f"# {game.get('gameId')}")
+        embed.add_field(name="Blue Side", value=channels[0].mention)
+        embed.add_field(name="Red Side", value=channels[1].mention)
 
-        if (category):return
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        category = await interaction.guild.create_category(f"# {game.get('gameId')}")
+    async def _create_channels(self, game, interaction: discord.Interaction) -> list[discord.VoiceChannel]:
+        category_name = f"JOGO: {game.get('gameId')}"
+        category = discord.utils.get(interaction.guild.categories, name=category_name)
 
-        await interaction.guild.create_voice_channel(f'🔊 Blue Side', category=category)
-        await interaction.guild.create_voice_channel(f'🔊 Red Side', category=category)
+        if (category): return category.channels
 
+        category_overwrite = {
+            interaction.guild.default_role: discord.PermissionOverwrite(
+                view_channel=False),
+        }
+
+        participants = game.get('participants')
+
+        members = [(discord.utils.get(interaction.guild.members, nick=participant.get('summonerName')),
+                    participant.get('teamId'))
+                    for participant in participants]
+
+        blueside_overwrite = {
+            member: discord.PermissionOverwrite(
+                read_messages=True, send_messages=True, connect=True, speak=True, view_channel=True)
+                for member, teamId in members if teamId == 100 and member
+        }
+
+        redside_overwrite = {
+            member: discord.PermissionOverwrite(
+                read_messages=True, send_messages=True, connect=True, speak=True, view_channel=True)
+                for member, teamId in members if teamId == 200 and member
+        }
+
+        category = await interaction.guild.create_category(category_name, overwrites=category_overwrite)
+
+        blueside_channel = await category.create_voice_channel(f'🔊 Blue Side', overwrites=blueside_overwrite)
+        redside_channel = await category.create_voice_channel(f'🔊 Red Side', overwrites=redside_overwrite)
+
+        return blueside_channel, redside_channel
 
 async def setup(prefix, token):
     intents = discord.Intents.all()
