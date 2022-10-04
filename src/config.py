@@ -9,5 +9,3 @@ settings = Dynaconf(
 
 
 assert settings.PROJECT_NAME == 'League Call'
-print('Loaded settings to:', settings.PROJECT_NAME)
-print('In debug mode:', settings.DEBUG)
