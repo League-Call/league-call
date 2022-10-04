@@ -83,22 +83,36 @@ class LeagueCallBot(commands.Bot):
                     participant.get('teamId'))
                     for participant in participants]
 
+        blueside = 100
+        redside = 200
+
         blueside_overwrite = {
             member: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True, connect=True, speak=True, view_channel=True)
-                for member, teamId in members if teamId == 100 and member
+                read_messages= teamId == blueside,
+                send_messages= teamId == blueside,
+                connect= teamId == blueside,
+                speak= teamId == blueside,
+                view_channel= True)
+            for member, teamId in members if member
         }
 
         redside_overwrite = {
             member: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True, connect=True, speak=True, view_channel=True)
-                for member, teamId in members if teamId == 200 and member
+                read_messages= teamId == redside,
+                send_messages= teamId == redside,
+                connect= teamId == redside,
+                speak= teamId == redside,
+                view_channel= True)
+            for member, teamId in members if member
         }
 
         category = await interaction.guild.create_category(category_name, overwrites=category_overwrite)
 
-        blueside_channel = await category.create_voice_channel(f'🔊 Blue Side', overwrites=blueside_overwrite)
-        redside_channel = await category.create_voice_channel(f'🔊 Red Side', overwrites=redside_overwrite)
+        blueside_channel = await category.create_voice_channel(
+            f'🔊 Blue Side', overwrites={**category_overwrite, **blueside_overwrite})
+
+        redside_channel = await category.create_voice_channel(
+            f'🔊 Red Side', overwrites={**category_overwrite, **redside_overwrite})
 
         return blueside_channel, redside_channel
 
