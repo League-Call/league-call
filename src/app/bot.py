@@ -34,7 +34,7 @@ class LeagueCallBot(commands.Bot):
             return
 
         try:
-            game = api.get_game_by_summoner_name(interaction.user.nick)
+            game = api.get_game_by_summoner_name(interaction.user.display_name)
         except ApiError as error:
             if (error.response.status_code == 404):
                 await interaction.response.send_message("Infelizmente não encontramos a sua partida", ephemeral=True)
@@ -75,7 +75,7 @@ class LeagueCallBot(commands.Bot):
 
         participants = game.get('participants')
 
-        members = [(discord.utils.get(interaction.guild.members, nick=participant.get('summonerName')),
+        members = [(discord.utils.get(interaction.guild.members, display_name=participant.get('summonerName')),
                     participant.get('teamId'))
                     for participant in participants]
 
