@@ -7,8 +7,14 @@ import services.riot_api as api
 from riotwatcher import ApiError
 import logging
 
+from cachetools import TTLCache
+
 
 class LeagueCallBot(commands.Bot):
+    def __init__(self, command_prefix, intents):
+        super().__init__(command_prefix, intents=intents)
+        self.button_cache = TTLCache(maxsize=100, ttl=60)
+
     async def on_ready(self):
         logging.info(f'Logged on as {self.user}!')
         registry_games_channel = self.get_channel(settings.REGISTER_GAME_CHANNEL_ID)
@@ -36,6 +42,12 @@ class LeagueCallBot(commands.Bot):
     async def registry_game_callback(self, interaction: discord.Interaction):
         if (not interaction.user.get_role(settings.ROLE_CONFIGURED_ID)):
             return
+
+        if(self.button_cache.get(interaction.user.id)):
+            await interaction.response.send_message("Aguarde para usar o botão novamente...", ephemeral=True)
+            return
+
+        self.button_cache[interaction.user.id] = True
 
         try:
             game = api.get_game_by_summoner_name(interaction.user.display_name)
