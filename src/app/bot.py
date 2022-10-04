@@ -56,6 +56,8 @@ class LeagueCallBot(commands.Bot):
             await interaction.response.send_message("Infelizmente não encontramos a sua partida!", ephemeral=True)
             return
 
+        await interaction.response.defer()
+
         channels = await self._create_channels(game, interaction)
         embed = discord.Embed(title="Registro de partida",
                             description="Partida registrada com sucesso!",
@@ -64,7 +66,7 @@ class LeagueCallBot(commands.Bot):
         embed.add_field(name="Blue Side", value=channels[0].mention)
         embed.add_field(name="Red Side", value=channels[1].mention)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     async def _create_channels(self, game, interaction: discord.Interaction) -> list[discord.VoiceChannel]:
         category_name = f"JOGO: {game.get('gameId')}"
