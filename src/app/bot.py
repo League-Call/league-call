@@ -1,6 +1,8 @@
 from config import settings
-from discord.ext import commands
+
+from discord.ext import commands, tasks
 import discord
+
 import services.riot_api as api
 from riotwatcher import ApiError
 import logging
@@ -28,6 +30,8 @@ class LeagueCallBot(commands.Bot):
         logging.info(f'Sending message button to channel {registry_games_channel.name}...\n')
 
         await registry_games_channel.send(embed=embed, view=view)
+        self.league_server = self.get_guild(settings.GUILD_ID)
+        self.handle_games.start()
 
     async def registry_game_callback(self, interaction: discord.Interaction):
         if (not interaction.user.get_role(settings.ROLE_CONFIGURED_ID)):
@@ -97,6 +101,30 @@ class LeagueCallBot(commands.Bot):
         redside_channel = await category.create_voice_channel(f'🔊 Red Side', overwrites=redside_overwrite)
 
         return blueside_channel, redside_channel
+
+    @tasks.loop(minutes=5)
+    async def handle_games(self):
+        for category in self.league_server.categories:
+            if(category.name.startswith('JOGO:')):
+                game_id = category.name.split(': ')[1]
+
+                # Verify if game is ended
+                try:
+                    api.get_match_by_game_id(game_id)
+                except ApiError as error:
+                    if (error.response.status_code == 404):
+                        continue
+                    logging.error(error)
+                    continue
+                except Exception as error:
+                    logging.error(error)
+                    continue
+
+                for channel in category.channels:
+                    await channel.delete()
+
+                await category.delete()
+
 
 async def setup(prefix, token):
     intents = discord.Intents.all()
