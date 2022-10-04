@@ -3,15 +3,16 @@ from discord.ext import commands
 import discord
 import services.riot_api as api
 from riotwatcher import ApiError
+import logging
 
 
 class LeagueCallBot(commands.Bot):
     async def on_ready(self):
-        print(f'Logged on as {self.user}!')
+        logging.info(f'Logged on as {self.user}!')
         registry_games_channel = self.get_channel(settings.REGISTER_GAME_CHANNEL_ID)
 
         await registry_games_channel.purge()
-        print(f'Purging channel {registry_games_channel.name}...')
+        logging.info(f'Purging channel {registry_games_channel.name}...')
 
         button = discord.ui.Button(label="Estou em partida!", style=discord.ButtonStyle.danger)
         button.emoji = "⚔️"
@@ -24,7 +25,7 @@ class LeagueCallBot(commands.Bot):
                             description="Clique no botão abaixo para registrar sua partida!",
                             color=discord.Color.red())
 
-        print(f'Sending message button to channel {registry_games_channel.name}...')
+        logging.info(f'Sending message button to channel {registry_games_channel.name}...\n')
 
         await registry_games_channel.send(embed=embed, view=view)
 
@@ -39,11 +40,11 @@ class LeagueCallBot(commands.Bot):
                 await interaction.response.send_message("Infelizmente não encontramos a sua partida", ephemeral=True)
                 return
             else:
-                print(error)
+                logging.error(error)
                 await interaction.response.send_message("Ocorreu um erro ao registrar sua partida!", ephemeral=True)
                 return
         except Exception as error:
-            print(error)
+            logging.error(error)
             await interaction.response.send_message("Ocorreu um erro ao registrar sua partida!", ephemeral=True)
             return
 
