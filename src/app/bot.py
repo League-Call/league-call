@@ -22,9 +22,11 @@ class LeagueCallBot(commands.Bot):
         await registry_games_channel.purge()
         logging.info(f'Purging channel {registry_games_channel.name}...')
 
-        button = discord.ui.Button(label="Estou em partida!", style=discord.ButtonStyle.danger)
-        button.emoji = "⚔️"
-        button.callback = self.registry_game_callback
+        button = discord.ui.Button(
+            label="Estou em partida!",
+            style=discord.ButtonStyle.danger,
+            custom_id="registry_game_button",
+            emoji="⚔️")
 
         view = discord.ui.View(timeout=2000)
         view.add_item(button)
@@ -38,6 +40,11 @@ class LeagueCallBot(commands.Bot):
         await registry_games_channel.send(embed=embed, view=view)
         self.league_server = self.get_guild(settings.GUILD_ID)
         self.handle_games.start()
+
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.data.get("custom_id") == "registry_game_button":
+            await self.registry_game_callback(interaction)
+
 
     async def registry_game_callback(self, interaction: discord.Interaction):
         if (not interaction.user.get_role(settings.ROLE_CONFIGURED_ID)):
