@@ -1,3 +1,4 @@
+from app.helpers import find_participant_in_game_info
 from config import settings
 
 from discord.ext import commands, tasks
@@ -159,6 +160,29 @@ class LeagueCallBot(commands.Bot):
                     await channel.delete()
 
                 await category.delete()
+
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+
+        if (not before.get_role(settings.ROLE_CONFIGURED_ID)
+            and after.get_role(settings.ROLE_CONFIGURED_ID)):
+
+            game = api.get_game_by_summoner_name(after.display_name)
+            category_name = f"JOGO: {game.get('gameId')}"
+            category = discord.utils.get(self.league_server.categories, name=category_name)
+
+            player = find_participant_in_game_info(game, after.display_name)
+            player_side = f'🔊 {player.get("teamId") == 100 and "Blue" or "Red"} Side'
+
+            for channel in category.channels:
+                await channel.set_permissions(
+                    after,
+                    read_messages= channel.name == player_side,
+                    send_messages= channel.name == player_side,
+                    connect= channel.name == player_side,
+                    speak= channel.name == player_side,
+                    view_channel= True
+                )
+
 
 
 async def setup(prefix, token):
