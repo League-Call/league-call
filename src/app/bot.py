@@ -166,7 +166,18 @@ class LeagueCallBot(commands.Bot):
         if (not before.get_role(settings.ROLE_CONFIGURED_ID)
             and after.get_role(settings.ROLE_CONFIGURED_ID)):
 
-            game = api.get_game_by_summoner_name(after.display_name)
+            try:
+                game = api.get_game_by_summoner_name(after.display_name)
+            except ApiError as error:
+                if (error.response.status_code == 404):
+                    return
+                else:
+                    logging.error(error)
+                    return
+            except Exception as error:
+                logging.error(error)
+                return
+
             category_name = f"JOGO: {game.get('gameId')}"
             category = discord.utils.get(self.league_server.categories, name=category_name)
 
